@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hồ sơ cá nhân{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Hồ sơ cá nhân</h1>
+</div>
+
+<div class="profile-card">
+    {% if error %}
+    <div class="alert alert-danger mb-md">
+        <i class="bx bx-error-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+    
+    {% if success %}
+    <div class="alert alert-success mb-md">
+        <i class="bx bx-check-circle"></i> {{ success }}
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="profile-header mb-lg" style="background: var(--color-bg); padding: var(--space-md); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm);">
+            {% if account.avatar %}
+                <img src="{{ account.avatar.url }}" alt="{{ account.fullname }}" class="profile-avatar" id="avatarPreview" style="width: 80px; height: 80px; box-shadow: var(--shadow-solid-sm);">
+            {% else %}
+                <div class="profile-avatar-placeholder" id="avatarPreviewPlaceholder" style="width: 80px; height: 80px; box-shadow: var(--shadow-solid-sm);">
+                    {{ account.fullname|first|upper }}
+                </div>
+            {% endif %}
+
+            <div class="flex-1">
+                <h2 style="font-size: 24px; margin-bottom: 4px;">{{ account.username }}</h2>
+                <div class="mb-sm">
+                    {% if account.role == 'ADMIN' %}
+                        <span class="badge badge-danger">Quản trị viên</span>
+                    {% else %}
+                        <span class="badge badge-primary">Khách hàng</span>
+                    {% endif %}
+                </div>
+                <label for="avatar" class="btn btn-sm btn-secondary" style="margin-top: 8px;">
+                    <i class="bx bx-camera"></i> Đổi ảnh
+                </label>
+                <input type="file" id="avatar" name="avatar" accept="image/*" style="display: none;" onchange="previewImage(this)">
+            </div>
+        </div>
+
+        <div class="profile-body">
+            <h3 class="font-semibold mb-md">Thông tin cá nhân</h3>
+            
+            <div class="grid grid-2 gap-md">
+                <div class="form-group">
+                    <label class="form-label" for="fullname">Họ và tên</label>
+                    <div class="input-icon-wrapper">
+                        <i class="bx bx-user"></i>
+                        <input type="text" id="fullname" name="fullname" class="form-control" value="{{ account.fullname }}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <div class="input-icon-wrapper">
+                        <i class="bx bx-envelope"></i>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ account.email }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-lg">
+
+            <h3 class="font-semibold mb-md">Đổi mật khẩu</h3>
+            
+            <div class="form-group">
+                <label class="form-label" for="old_password">Mật khẩu hiện tại</label>
+                <div class="input-icon-wrapper">
+                    <i class="bx bx-lock-open-alt"></i>
+                    <input type="password" id="old_password" name="old_password" class="form-control" placeholder="Nhập mật khẩu hiện tại">
+                </div>
+            </div>
+
+            <div class="grid grid-2 gap-md">
+                <div class="form-group">
+                    <label class="form-label" for="new_password">Mật khẩu mới</label>
+                    <div class="input-icon-wrapper">
+                        <i class="bx bx-lock-alt"></i>
+                        <input type="password" id="new_password" name="new_password" class="form-control" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirm_password">Xác nhận mật khẩu</label>
+                    <div class="input-icon-wrapper">
+                        <i class="bx bx-check-shield"></i>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Nhập lại mật khẩu mới">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-lg">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bx bx-save"></i> Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const previewImage = (input) => {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader()
+            
+            reader.onload = (e) => {
+                // Kiem tra xem co the img khong, neu khong thi tao moi hoac thay the placeholder
+                let imgPreview = document.getElementById('avatarPreview')
+                const placeholder = document.getElementById('avatarPreviewPlaceholder')
+                
+                if (!imgPreview && placeholder) {
+                    imgPreview = document.createElement('img')
+                    imgPreview.id = 'avatarPreview'
+                    imgPreview.className = 'profile-avatar'
+                    placeholder.parentNode.replaceChild(imgPreview, placeholder)
+                }
+                
+                imgPreview.src = e.target.result
+            }
+            
+            reader.readAsDataURL(input.files[0])
+        }
+    }
+</script>
+{% endblock %}

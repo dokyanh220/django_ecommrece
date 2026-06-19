@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Thêm tài khoản{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Thêm tài khoản mới</h1>
+        <a href="{% url 'account_list' %}" class="btn btn-outline">
+            <i class="bx bx-arrow-back"></i> Quay lại
+        </a>
+    </div>
+
+    <div class="form-card">
+        {% if error %}
+            <div class="alert alert-danger mb-lg">
+                <i class="bx bx-error-circle"></i> {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="grid grid-2 gap-lg mb-lg">
+                <div class="form-group mb-0">
+                    <label class="form-label" for="fullname">Họ và tên</label>
+                    <input type="text" name="fullname" id="fullname" class="form-control" required>
+                </div>
+                
+                <div class="form-group mb-0">
+                    <label class="form-label" for="username">Tên đăng nhập</label>
+                    <input type="text" name="username" id="username" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" name="email" id="email" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Mật khẩu</label>
+                <input type="password" name="password" id="password" class="form-control" minlength="6" required>
+            </div>
+
+            <div class="form-group mb-lg">
+                <label class="form-label" for="status">Trạng thái</label>
+                <select name="status" id="status" class="form-control">
+                    <option value="True">Hoạt động</option>
+                    <option value="False">Khóa</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="avatar">Ảnh đại diện</label>
+                <input type="file" name="avatar" id="avatar" class="form-control-file" accept="image/*" onchange="previewImage(this)">
+                <div class="image-preview mt-sm" id="imagePreview">
+                    <img src="" alt="Preview">
+                </div>
+            </div>
+
+            <div class="mt-xl">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bx bx-save"></i> Tạo tài khoản
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const img = preview.querySelector('img');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            img.src = e.target.result;
+            preview.classList.add('show');
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        img.src = '';
+        preview.classList.remove('show');
+    }
+}
+</script>
+{% endblock %}

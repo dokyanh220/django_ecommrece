@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Giỏ hàng{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="bx bx-cart"></i> Giỏ hàng
+        </h1>
+    </div>
+
+    {% if cart_items %}
+        <div class="cart-layout">
+            <!-- Cart Items -->
+            <div class="cart-items">
+                {% for item in cart_items %}
+                    <div class="cart-item" data-item-id="{{ item.id }}" data-price="{{ item.product.price }}">
+                        <!-- Item Image -->
+                        <a href="{% url 'product_detail' item.product.id %}">
+                            {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="cart-item-img">
+                            {% else %}
+                                <div class="cart-item-img-placeholder">
+                                    <i class="bx bx-image"></i>
+                                </div>
+                            {% endif %}
+                        </a>
+
+                        <!-- Item Info -->
+                        <div class="cart-item-info">
+                            <a href="{% url 'product_detail' item.product.id %}" class="cart-item-name">
+                                {{ item.product.name }}
+                            </a>
+                            <div class="cart-item-price">
+                                {{ item.product.price|floatformat:0|intcomma }}đ
+                            </div>
+                        </div>
+
+                        <!-- Quantity Control -->
+                        <div class="cart-item-actions">
+                            <div class="qty-control">
+                                <button type="button" class="qty-btn" onclick="updateQty({{ item.id }}, -1)">
+                                    <i class="bx bx-minus"></i>
+                                </button>
+                                <input type="number" class="qty-input" id="qty-{{ item.id }}" value="{{ item.quantity }}" min="1" readonly>
+                                <button type="button" class="qty-btn" onclick="updateQty({{ item.id }}, 1)">
+                                    <i class="bx bx-plus"></i>
+                                </button>
+                            </div>
+
+                            <button type="button" class="btn btn-ghost danger" onclick="removeItem({{ item.id }})" title="Xóa">
+                                <i class="bx bx-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Cart Summary -->
+            <div class="cart-summary">
+                <h3 class="font-semibold mb-lg">Tóm tắt đơn hàng</h3>
+
+                <div class="cart-summary-row">
+                    <span class="text-light">Tạm tính</span>
+                    <span id="subtotal">{{ total_price|floatformat:0|intcomma }}đ</span>
+                </div>
+
+                <div class="cart-summary-row">
+                    <span class="text-light">Phí vận chuyển</span>
+                    <span class="text-success">Miễn phí</span>
+                </div>
+
+                <div class="cart-summary-row cart-total-price">
+                    <span class="font-bold">Tổng cộng</span>
+                    <span class="font-bold" id="total">{{ total_price|floatformat:0|intcomma }}đ</span>
+                </div>
+
+                <a href="{% url 'checkout' %}" class="btn btn-primary btn-lg btn-block mt-lg">
+                    <i class="bx bx-credit-card"></i> Thanh toán
+                </a>
+
+                <a href="{% url 'product_list' %}" class="btn btn-outline btn-block mt-md">
+                    <i class="bx bx-arrow-back"></i> Tiếp tục mua sắm
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="bx bx-cart"></i>
+            <h3>Giỏ hàng trống</h3>
+            <p class="text-lighter mb-lg">Bạn chưa có sản phẩm nào trong giỏ hàng.</p>
+            <a href="{% url 'product_list' %}" class="btn btn-primary btn-lg">
+                <i class="bx bx-shopping-bag"></i> Mua sắm ngay
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function formatPrice(value) {
+        return Math.round(value).toLocaleString('vi-VN') + 'đ';
+    }
+
+    function getCSRFToken() {
+        const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+        return cookie ? cookie.split('=')[1] : '';
+    }
+
+    function updateCartItemApi(itemId, quantity) {
+        return fetch('/api/cart/update/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                item_id: itemId,
+                quantity: quantity
+            })
+        }).then(response => response.json());
+    }
+
+    function recalcTotal() {
+        let total = 0;
+        document.querySelectorAll('.cart-item').forEach(function(row) {
+            const price = parseFloat(row.dataset.price) || 0;
+            const qtyInput = row.querySelector('.qty-input');
+            const qty = parseInt(qtyInput.value) || 0;
+            total += price * qty;
+        });
+        document.getElementById('subtotal').textContent = formatPrice(total);
+        document.getElementById('total').textContent = formatPrice(total);
+    }
+
+    function updateQty(itemId, delta) {
+        const input = document.getElementById('qty-' + itemId);
+        let val = parseInt(input.value) || 1;
+        val += delta;
+        if (val < 1) val = 1;
+        input.value = val;
+
+        recalcTotal();
+
+        updateCartItemApi(itemId, val).catch(function(err) {
+            console.error('Lỗi cập nhật giỏ hàng:', err);
+        });
+    }
+
+    function removeItem(itemId) {
+        updateCartItemApi(itemId, 0).then(function() {
+            const row = document.querySelector('.cart-item[data-item-id="' + itemId + '"]');
+            if (row) {
+                row.remove();
+            }
+            recalcTotal();
+
+            // Check if cart is empty
+            const remaining = document.querySelectorAll('.cart-item');
+            if (remaining.length === 0) {
+                location.reload();
+            }
+        }).catch(function(err) {
+            console.error('Lỗi xóa sản phẩm:', err);
+        });
+    }
+</script>
+{% endblock %}

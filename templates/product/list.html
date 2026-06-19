@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Sản phẩm{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Sản phẩm</h1>
+        {% if request.session.role == 'ADMIN' %}
+            <div class="flex gap-sm items-center">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-outline">
+                        <i class="bx bx-cabinet"></i> Dữ liệu <i class="bx bx-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="{% url 'product_export' %}" class="dropdown-item">
+                            <i class="bx bx-download"></i> Xuất CSV
+                        </a>
+                        <button type="button" class="dropdown-item" onclick="document.getElementById('import-file').click()">
+                            <i class="bx bx-upload"></i> Nhập CSV
+                        </button>
+                    </div>
+                </div>
+                <form id="import-form" method="post" action="{% url 'product_import' %}" enctype="multipart/form-data" style="display: none;">
+                    {% csrf_token %}
+                    <input type="file" id="import-file" name="file" accept=".csv" onchange="document.getElementById('import-form').submit()">
+                </form>
+
+                <a href="{% url 'product_create' %}" class="btn btn-primary">
+                    <i class="bx bx-plus"></i> Thêm sản phẩm
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div style="display: flex; gap: var(--space-xl); align-items: flex-start; margin-top: var(--space-lg);">
+        <!-- Sidebar Filter (Smart Filter) -->
+        <aside style="width: 280px; flex-shrink: 0; background: var(--color-white); padding: var(--space-lg); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm); position: sticky; top: 100px;">
+            <h3 style="margin-bottom: var(--space-md); font-size: 18px; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 8px;">
+                <i class="bx bx-filter-alt"></i> Bộ lọc thông minh
+            </h3>
+            <form method="get" action="{% url 'product_list' %}">
+                
+                <div class="form-group mb-lg">
+                    <label class="form-label text-sm text-light">Tìm kiếm</label>
+                    <div class="input-icon-wrapper">
+                        <i class="bx bx-search"></i>
+                        <input type="text" name="keyword" class="form-control" placeholder="Tên sản phẩm..." value="{{ keyword|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="form-group mb-lg">
+                    <label class="form-label text-sm text-light">Danh mục</label>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                            <input type="radio" name="category_id" value="" {% if not category_id %}checked{% endif %} onchange="this.form.submit()">
+                            <span>Tất cả danh mục</span>
+                        </label>
+                        {% for cat in categories %}
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                                <input type="radio" name="category_id" value="{{ cat.id }}" {% if category_id|stringformat:"s" == cat.id|stringformat:"s" %}checked{% endif %} onchange="this.form.submit()">
+                                <span>{{ cat.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-group mb-lg">
+                    <label class="form-label text-sm text-light">Sắp xếp theo</label>
+                    <select name="sort" class="form-control" onchange="this.form.submit()">
+                        <option value="">-- Mặc định --</option>
+                        <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Giá tăng dần</option>
+                        <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Giá giảm dần</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="bx bx-check"></i> Áp dụng bộ lọc
+                </button>
+            </form>
+        </aside>
+
+        <!-- Product Grid Area -->
+        <div style="flex: 1;">
+            {% if products %}
+                <div class="grid grid-3 gap-lg">
+                    {% for product in products %}
+                        <div class="card product-card">
+                            <a href="{% url 'product_detail' product.id %}" style="display: block; position: relative;">
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img">
+                                {% else %}
+                                    <img src="{% static 'images/default-product.jpg' %}" alt="Default" class="card-img">
+                                {% endif %}
+
+                                {% if not product.status or product.quantity <= 0 %}
+                                <div class="sold-out-overlay">
+                                    <span>Hết hàng</span>
+                                </div>
+                                {% endif %}
+                            </a>
+                            <div class="card-body">
+                                {% if product.category %}
+                                    <span class="product-category">{{ product.category.name }}</span>
+                                {% endif %}
+                                <a href="{% url 'product_detail' product.id %}" class="product-name" style="font-size: 16px;">{{ product.name }}</a>
+                                <div class="product-price">{{ product.price|floatformat:0|intcomma }}đ</div>
+                                <div class="product-actions">
+                                    <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-outline">
+                                        <i class="bx bx-show"></i> Chi tiết
+                                    </a>
+                                    
+                                    {% if product.status and product.quantity > 0 %}
+                                    <form method="post" action="{% url 'add_to_cart' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                                        <input type="hidden" name="quantity" value="1">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <i class="bx bx-cart-add"></i> Thêm giỏ
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-outline" style="cursor: not-allowed; opacity: 0.6; pointer-events: none;">
+                                        <i class="bx bx-cart-add"></i> Hết hàng
+                                    </button>
+                                    {% endif %}
+                                </div>
+
+                                {% if request.session.role == 'ADMIN' %}
+                                    <div class="product-actions mt-md" style="padding-top: 12px; border-top: 1px dashed var(--color-border);">
+                                        <a href="{% url 'product_edit' product.id %}" class="btn btn-sm btn-outline">
+                                            <i class="bx bx-edit"></i> Sửa
+                                        </a>
+                                        <a href="{% url 'product_delete' product.id %}" class="btn btn-sm btn-danger">
+                                            <i class="bx bx-trash"></i> Xóa
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <div class="pagination" style="margin-top: var(--space-xl);">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% if query_string %}&{{ query_string }}{% endif %}" class="page-link" title="Trang đầu">
+                                <i class="bx bx-chevrons-left"></i>
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="page-link" title="Trang trước">
+                                <i class="bx bx-chevron-left"></i>
+                            </a>
+                        {% else %}
+                            <span class="page-link disabled"><i class="bx bx-chevrons-left"></i></span>
+                            <span class="page-link disabled"><i class="bx bx-chevron-left"></i></span>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="page-link active">{{ num }}</span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}" class="page-link">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="page-link" title="Trang sau">
+                                <i class="bx bx-chevron-right"></i>
+                            </a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}" class="page-link" title="Trang cuối">
+                                <i class="bx bx-chevrons-right"></i>
+                            </a>
+                        {% else %}
+                            <span class="page-link disabled"><i class="bx bx-chevron-right"></i></span>
+                            <span class="page-link disabled"><i class="bx bx-chevrons-right"></i></span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state" style="text-align: center; padding: 60px 20px; background: white; border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm);">
+                    <i class="bx bx-package text-lighter" style="font-size: 64px; margin-bottom: 16px;"></i>
+                    <h3>Không tìm thấy sản phẩm</h3>
+                    <p class="text-lighter">Hiện tại chưa có sản phẩm nào phù hợp với bộ lọc của bạn.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

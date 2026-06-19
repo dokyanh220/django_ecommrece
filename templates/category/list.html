@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quản lý danh mục{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">Quản lý danh mục</h1>
+        <div class="flex gap-sm items-center">
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline">
+                    <i class="bx bx-cabinet"></i> Dữ liệu <i class="bx bx-chevron-down"></i>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="{% url 'category_export' %}" class="dropdown-item">
+                        <i class="bx bx-download"></i> Xuất CSV
+                    </a>
+                    <button type="button" class="dropdown-item" onclick="document.getElementById('import-file').click()">
+                        <i class="bx bx-upload"></i> Nhập CSV
+                    </button>
+                </div>
+            </div>
+            <form id="import-form" method="post" action="{% url 'category_import' %}" enctype="multipart/form-data" style="display: none;">
+                {% csrf_token %}
+                <input type="file" id="import-file" name="file" accept=".csv" onchange="document.getElementById('import-form').submit()">
+            </form>
+
+            <a href="{% url 'category_create' %}" class="btn btn-primary">
+                <i class="bx bx-plus"></i> Thêm danh mục
+            </a>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <form method="get" action="{% url 'category_list' %}" class="flex gap-sm items-center">
+            <div class="input-icon-wrapper flex-1">
+                <i class="bx bx-search"></i>
+                <input type="text" name="keyword" class="form-control" placeholder="Tìm kiếm danh mục..." value="{{ keyword|default:'' }}">
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bx bx-search"></i> Tìm kiếm
+            </button>
+        </form>
+    </div>
+
+    {% if categories %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ảnh</th>
+                    <th>Tên</th>
+                    <th>Mô tả</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>
+                        {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}" width="48" height="48">
+                        {% else %}
+                        <div class="text-lighter text-sm">Không có ảnh</div>
+                        {% endif %}
+                    </td>
+                    <td class="font-medium">{{ category.name }}</td>
+                    <td class="text-light">{{ category.description|truncatewords:12|default:"—" }}</td>
+                    <td>
+                        <div class="flex gap-sm">
+                            <a href="{% url 'category_edit' category.id %}" class="btn btn-sm btn-outline" title="Chỉnh sửa">
+                                <i class="bx bx-edit"></i>
+                            </a>
+                            <a href="{% url 'category_delete' category.id %}" class="btn btn-sm btn-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này?')">
+                                <i class="bx bx-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center">
+            <i class="bx bx-category text-lighter" style="font-size:3rem"></i>
+            <p class="text-light mt-md">Không tìm thấy danh mục nào.</p>
+            <a href="{% url 'category_create' %}" class="btn btn-primary mt-md">
+                <i class="bx bx-plus"></i> Thêm danh mục mới
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

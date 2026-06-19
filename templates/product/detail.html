@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3xl); background: var(--color-white); padding: var(--space-2xl); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-lg);">
+        <!-- Product Image Gallery -->
+        <div>
+            <div class="main-image-container" style="position: relative; border: var(--border-width) solid var(--color-border); margin-bottom: var(--space-md); box-shadow: var(--shadow-solid-sm); background: white;">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" id="mainGalleryImage" style="width: 100%; aspect-ratio: 4/3; object-fit: contain; display: block; padding: var(--space-md);">
+                {% else %}
+                    <img src="{% static 'images/default-product.jpg' %}" alt="Default" id="mainGalleryImage" style="width: 100%; aspect-ratio: 4/3; object-fit: contain; display: block; padding: var(--space-md);">
+                {% endif %}
+                
+                {% if not product.status or product.quantity <= 0 %}
+                <div class="sold-out-overlay" style="font-size: 24px;">
+                    <span style="font-size: 24px; padding: 12px 24px;">Hết hàng</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if images or product.image %}
+            <div class="gallery-thumbnails" style="display: flex; gap: var(--space-md); overflow-x: auto; padding-bottom: 8px;">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" class="gallery-thumb active" onclick="changeMainImage(this.src)" style="width: 100px; height: 100px; object-fit: contain; background: white; cursor: pointer; border: var(--border-width) solid var(--color-primary); box-shadow: 2px 2px 0px #000; opacity: 1; transition: var(--transition);">
+                {% endif %}
+                
+                {% for img in images %}
+                <img src="{{ img.image.url }}" class="gallery-thumb" onclick="changeMainImage(this.src)" style="width: 100px; height: 100px; object-fit: contain; background: white; cursor: pointer; border: var(--border-width) solid var(--color-border); opacity: 0.7; transition: var(--transition);">
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Product Info -->
+        <div class="product-detail-info">
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-md);">
+                <h1 style="font-size: 28px; line-height: 1.3; margin-bottom: 12px;">{{ product.name }}</h1>
+                <button class="btn btn-outline" style="border-radius: 50%; width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--color-accent); font-size: 24px; flex-shrink: 0; border-radius: 0;">
+                    <i class="bx bx-heart"></i>
+                </button>
+            </div>
+
+            <div style="display: flex; gap: var(--space-xl); margin-bottom: var(--space-lg); font-size: 14px; color: var(--color-text-light);">
+                <div>
+                    Thương hiệu: 
+                    {% if product.category %}
+                        <a href="{% url 'product_list' %}?category_id={{ product.category.id }}" style="color: var(--color-secondary); font-weight: 700; text-decoration: underline;">{{ product.category.name|upper }}</a>
+                    {% else %}
+                        <span style="color: var(--color-secondary); font-weight: 700; text-decoration: underline;">CHƯA CẬP NHẬT</span>
+                    {% endif %}
+                </div>
+                <div>
+                    Mã sản phẩm: <span style="font-weight: 700;">{{ product.id|stringformat:"05d" }}</span>
+                </div>
+            </div>
+
+            <div style="background: var(--color-bg); padding: var(--space-md); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm); margin-bottom: var(--space-lg);">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 4px;">
+                    <span style="font-size: 32px; font-weight: 800; color: var(--color-accent);">{{ product.price|floatformat:0|intcomma }}đ</span>
+                    <span style="font-size: 18px; color: #888; text-decoration: line-through; font-weight: 600;">
+                        {% widthratio product.price 80 100 as original_price %}
+                        {{ original_price|floatformat:0|intcomma }}đ
+                    </span>
+                    <span style="background: var(--color-accent); color: white; padding: 4px 8px; font-weight: 700; font-size: 14px; border: 2px solid var(--color-border);">
+                        -20%
+                    </span>
+                </div>
+                <div style="font-size: 13px; color: #666; font-style: italic;">Đã bao gồm VAT và các khoản thuế/phí theo quy định<br>(Chưa bao gồm phí vận chuyển)</div>
+            </div>
+
+            <ul style="list-style: none; padding: 0; margin-bottom: var(--space-lg); font-size: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <li style="display: flex; align-items: center; gap: 8px;">
+                    <i class="bx bx-check-circle" style="color: var(--color-success); font-size: 20px;"></i>
+                    Sản phẩm chính hãng 100%
+                </li>
+                <li style="display: flex; align-items: center; gap: 8px;">
+                    <i class="bx bx-check-circle" style="color: var(--color-success); font-size: 20px;"></i>
+                    Chất liệu an toàn cho trẻ em
+                </li>
+                <li style="display: flex; align-items: center; gap: 8px;">
+                    <i class="bx bx-check-circle" style="color: var(--color-success); font-size: 20px;"></i>
+                    Miễn phí vận chuyển cho đơn hàng tiêu chuẩn
+                </li>
+                <li style="display: flex; align-items: center; gap: 8px;">
+                    <i class="bx bx-check-circle" style="color: var(--color-success); font-size: 20px;"></i>
+                    Giao hàng hỏa tốc 4 tiếng. <a href="#" style="text-decoration: underline;">Xem chi tiết</a>
+                </li>
+            </ul>
+
+            <div style="margin-bottom: var(--space-lg);">
+                {% if product.status and product.quantity > 0 %}
+                    <div style="display: inline-flex; align-items: center; gap: 8px; border: 2px solid var(--color-border); padding: 4px 12px; font-weight: 700; font-size: 14px; background: white; box-shadow: 2px 2px 0px #000;">
+                        <span style="width: 8px; height: 8px; background: var(--color-success); border-radius: 50%; display: inline-block;"></span>
+                        Còn {{ product.quantity }} sản phẩm
+                    </div>
+                {% else %}
+                    <div style="display: inline-flex; align-items: center; gap: 8px; border: 2px solid var(--color-border); padding: 4px 12px; font-weight: 700; font-size: 14px; background: white; box-shadow: 2px 2px 0px #000; color: var(--color-accent);">
+                        <span style="width: 8px; height: 8px; background: var(--color-accent); border-radius: 50%; display: inline-block;"></span>
+                        Đã hết hàng
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="product-detail-actions">
+                <form method="post" action="{% url 'add_to_cart' %}" style="display: flex; flex-direction: column; gap: var(--space-md);">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-weight: 700; display: block; margin-bottom: 8px;">Số lượng</label>
+                        <div class="qty-control" style="display: inline-flex; width: 140px; height: 44px;">
+                            <button type="button" class="qty-btn" onclick="changeQty(-1)" style="flex: 1; font-size: 20px; font-weight: normal; background: var(--color-bg);">&minus;</button>
+                            <input type="number" name="quantity" value="1" min="1" max="{{ product.quantity }}" class="qty-input" id="detail-qty" style="flex: 1; width: 50px; background: var(--color-bg);">
+                            <button type="button" class="qty-btn" onclick="changeQty(1)" style="flex: 1; font-size: 20px; font-weight: normal; background: var(--color-bg);">+</button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: var(--space-md);">
+                        {% if product.status and product.quantity > 0 %}
+                            <button type="submit" class="btn" style="flex: 1; background: #FFE5EC; color: var(--color-accent); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm);">
+                                <i class="bx bx-cart-add" style="font-size: 24px;"></i> Thêm Vào Giỏ Hàng
+                            </button>
+                            <button type="submit" name="buy_now" value="true" class="btn" style="flex: 1; background: var(--color-accent); color: white; border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm);">
+                                Mua Ngay
+                            </button>
+                        {% else %}
+                            <button type="button" class="btn btn-outline" style="flex: 1; opacity: 0.6; cursor: not-allowed;" disabled>
+                                Hết hàng
+                            </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            
+            {% if product.description %}
+                <div style="margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: var(--border-width) solid var(--color-border);">
+                    <h3 class="font-semibold mb-sm">Mô tả chi tiết</h3>
+                    <p class="text-light">{{ product.description|linebreaksbr }}</p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- Reviews Section (Fake) -->
+    <div style="margin-top: var(--space-3xl); background: var(--color-bg); padding: var(--space-2xl); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-lg);">
+        <h2 style="margin-bottom: var(--space-lg); display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-message-square-detail text-primary'></i> Đánh giá & Nhận xét
+        </h2>
+        
+        <div class="grid grid-3 gap-xl" style="align-items: center; border-bottom: var(--border-width) solid var(--color-border); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl);">
+            <div style="text-align: center;">
+                <h1 style="font-size: 48px; color: var(--color-warning); margin-bottom: 0;">4.8</h1>
+                <div style="color: var(--color-warning); font-size: 24px; margin-bottom: 8px;">
+                    <i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bxs-star-half'></i>
+                </div>
+                <p class="text-light">Dựa trên 128 đánh giá</p>
+            </div>
+            <div style="grid-column: span 2;">
+                <!-- Rating bars -->
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <span>5 sao</span>
+                    <div style="flex: 1; height: 8px; background: var(--color-bg); border-radius: 4px; overflow: hidden;">
+                        <div style="width: 85%; height: 100%; background: var(--color-warning);"></div>
+                    </div>
+                    <span class="text-light" style="width: 30px;">85%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <span>4 sao</span>
+                    <div style="flex: 1; height: 8px; background: var(--color-bg); border-radius: 4px; overflow: hidden;">
+                        <div style="width: 10%; height: 100%; background: var(--color-warning);"></div>
+                    </div>
+                    <span class="text-light" style="width: 30px;">10%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <span>3 sao</span>
+                    <div style="flex: 1; height: 8px; background: var(--color-bg); border-radius: 4px; overflow: hidden;">
+                        <div style="width: 5%; height: 100%; background: var(--color-warning);"></div>
+                    </div>
+                    <span class="text-light" style="width: 30px;">5%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fake Comments -->
+        <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+            <div style="display: flex; gap: var(--space-md); background: white; padding: var(--space-md); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm);">
+                <div style="width: 48px; height: 48px; background: var(--color-primary); color: var(--color-black); border: var(--border-width) solid var(--color-border); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">H</div>
+                <div>
+                    <h4 style="margin-bottom: 4px;">Hoàng Đức</h4>
+                    <div style="color: var(--color-warning); font-size: 14px; margin-bottom: 8px;">
+                        <i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bxs-star'></i>
+                    </div>
+                    <p style="color: var(--color-text);">Sản phẩm tuyệt vời! Bé nhà mình rất thích. Chất lượng hoàn thiện tốt, màu sắc y như hình.</p>
+                    <span class="text-lighter text-sm">2 ngày trước</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: var(--space-md); background: white; padding: var(--space-md); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm);">
+                <div style="width: 48px; height: 48px; background: var(--color-success); color: var(--color-black); border: var(--border-width) solid var(--color-border); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">L</div>
+                <div>
+                    <h4 style="margin-bottom: 4px;">Lan Anh</h4>
+                    <div style="color: var(--color-warning); font-size: 14px; margin-bottom: 8px;">
+                        <i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bxs-star'></i><i class='bx bx-star'></i>
+                    </div>
+                    <p style="color: var(--color-text);">Giao hàng nhanh, đóng gói cẩn thận. Tuy nhiên kích thước hơi nhỏ so với mình nghĩ một xíu.</p>
+                    <span class="text-lighter text-sm">1 tuần trước</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related_products %}
+    <div style="margin-top: var(--space-3xl);">
+        <h2 style="margin-bottom: var(--space-lg); display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-purchase-tag text-primary'></i> Sản phẩm liên quan
+        </h2>
+        <div class="grid grid-4 gap-lg">
+            {% for rel_product in related_products %}
+            <div class="card product-card">
+                <a href="{% url 'product_detail' rel_product.id %}" style="display: block; position: relative;">
+                    {% if rel_product.image %}
+                        <img src="{{ rel_product.image.url }}" alt="{{ rel_product.name }}" class="card-img">
+                    {% else %}
+                        <img src="{% static 'images/default-product.jpg' %}" alt="Default" class="card-img">
+                    {% endif %}
+                    
+                    {% if not rel_product.status or rel_product.quantity <= 0 %}
+                    <div class="sold-out-overlay">
+                        <span>Hết hàng</span>
+                    </div>
+                    {% endif %}
+                </a>
+                <div class="card-body">
+                    {% if rel_product.category %}
+                        <span class="product-category">{{ rel_product.category.name }}</span>
+                    {% endif %}
+                    <a href="{% url 'product_detail' rel_product.id %}" class="product-name" style="font-size: 15px;">{{ rel_product.name }}</a>
+                    <div class="product-price" style="font-size: 16px;">{{ rel_product.price|floatformat:0|intcomma }}đ</div>
+                    <div class="product-actions mt-sm">
+                        <a href="{% url 'product_detail' rel_product.id %}" class="btn btn-outline btn-sm flex-1">
+                            <i class='bx bx-show'></i>
+                            Chi tiết
+                        </a>
+                        {% if rel_product.status and rel_product.quantity > 0 %}
+                        <form method="post" action="{% url 'add_to_cart' %}" style="flex: 1;">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ rel_product.id }}">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn btn-primary btn-sm btn-block">
+                                <i class='bx bx-cart-add'></i>
+                                Thêm
+                            </button>
+                        </form>
+                        {% else %}
+                        <button class="btn btn-sm btn-outline flex-1" style="cursor: not-allowed; opacity: 0.6; pointer-events: none;">
+                            <i class='bx bx-cart-add'></i> Hết hàng
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function changeQty(delta) {
+        const input = document.getElementById('detail-qty');
+        let val = parseInt(input.value) || 1;
+        const max = parseInt(input.max) || 999;
+        val += delta;
+        if (val < 1) val = 1;
+        if (val > max) val = max;
+        input.value = val;
+    }
+
+    function changeMainImage(src) {
+        document.getElementById('mainGalleryImage').src = src;
+        
+        // Update active class on thumbnails
+        const thumbs = document.querySelectorAll('.gallery-thumb');
+        thumbs.forEach(thumb => {
+            if (thumb.src === src) {
+                thumb.style.borderColor = 'var(--color-primary)';
+                thumb.style.opacity = '1';
+            } else {
+                thumb.style.borderColor = 'transparent';
+                thumb.style.opacity = '0.7';
+            }
+        });
+    }
+</script>
+{% endblock %}

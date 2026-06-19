@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sửa sản phẩm{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">Sửa sản phẩm</h1>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger mb-lg">
+            <i class="bx bx-error-circle"></i> {{ error }}
+        </div>
+    {% endif %}
+
+    <div class="form-card">
+        <form method="post" action="{% url 'product_edit' product.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label" for="category">Danh mục</label>
+                <select name="category_id" id="category" class="form-control" required>
+                    <option value="">-- Chọn danh mục --</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if product.category_id == cat.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="name">Tên sản phẩm</label>
+                <input type="text" name="name" id="name" class="form-control" value="{{ product.name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="description">Mô tả</label>
+                <textarea name="description" id="description" class="form-control" rows="5">{{ product.description }}</textarea>
+            </div>
+
+            <div class="grid grid-2 gap-md">
+                <div class="form-group">
+                    <label class="form-label" for="price">Giá (VNĐ)</label>
+                    <input type="number" name="price" id="price" class="form-control" min="0" value="{{ product.price|floatformat:0 }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="quantity">Số lượng</label>
+                    <input type="number" name="quantity" id="quantity" class="form-control" min="0" value="{{ product.quantity }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="status">Trạng thái</label>
+                <select name="status" id="status" class="form-control">
+                    <option value="active" {% if product.status == 'active' %}selected{% endif %}>Đang bán</option>
+                    <option value="inactive" {% if product.status == 'inactive' %}selected{% endif %}>Ngừng bán</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="image">Ảnh đại diện (Main Image)</label>
+                {% if product.image %}
+                    <div class="image-preview show mb-md" id="currentImage">
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    </div>
+                    <p class="text-sm text-lighter mb-sm">Chọn ảnh mới để thay thế ảnh hiện tại</p>
+                {% endif %}
+                <input type="file" name="image" id="image" class="form-control form-control-file" accept="image/*" onchange="previewImage(event)">
+                <div class="image-preview mt-md" id="imagePreview">
+                    <img id="previewImg" src="" alt="Preview">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="images">Thêm Ảnh phụ (Thư viện ảnh)</label>
+                <input type="file" name="images" id="images" class="form-control form-control-file" accept="image/*" multiple>
+            </div>
+
+            <div class="flex gap-md mt-lg">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bx bx-save"></i> Lưu thay đổi
+                </button>
+                <a href="{% url 'product_list' %}" class="btn btn-outline btn-lg">
+                    <i class="bx bx-arrow-back"></i> Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function previewImage(event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const currentImage = document.getElementById('currentImage');
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.classList.add('show');
+                if (currentImage) {
+                    currentImage.style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewImg.src = '';
+            preview.classList.remove('show');
+            if (currentImage) {
+                currentImage.style.display = '';
+            }
+        }
+    }
+</script>
+{% endblock %}

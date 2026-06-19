@@ -1,0 +1,178 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Website Bán Hàng{% endblock %}</title>
+
+    <!-- Google Fonts - Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="container">
+            <a href="{% url 'home' %}" class="navbar-brand">
+                <i class='bx bx-store'></i>
+                ToyCity
+            </a>
+
+            <nav class="navbar-nav">
+                <a href="{% url 'home' %}" class="nav-link">
+                    <i class='bx bx-home-alt'></i>
+                    <span>Trang chủ</span>
+                </a>
+
+                <a href="{% url 'product_list' %}" class="nav-link">
+                    <i class='bx bx-package'></i>
+                    <span>Sản phẩm</span>
+                </a>
+
+                {% if request.session.account_id %}
+
+                    {% if request.session.role == 'ADMIN' %}
+                        <a href="{% url 'category_list' %}" class="nav-link">
+                            <i class='bx bx-category'></i>
+                            <span>Danh mục</span>
+                        </a>
+                        <a href="{% url 'account_list' %}" class="nav-link">
+                            <i class='bx bx-group'></i>
+                            <span>Tài khoản</span>
+                        </a>
+                    {% endif %}
+
+                    {% if request.session.role != 'ADMIN' %}
+                    <a href="{% url 'cart' %}" class="nav-link" style="position: relative;">
+                        <i class='bx bx-cart'></i>
+                        <span>Giỏ hàng</span>
+                        {% if cart_count > 0 %}
+                            <span class="cart-badge">{{ cart_count }}</span>
+                        {% endif %}
+                    </a>
+                    {% endif %}
+
+                    <!-- User Dropdown -->
+                    <div class="nav-dropdown">
+                        <button class="nav-dropdown-toggle">
+                            {% if request.session.avatar %}
+                                <img src="{{ request.session.avatar }}" class="nav-dropdown-avatar" alt="">
+                            {% else %}
+                                <div class="nav-dropdown-avatar-placeholder">
+                                    {{ request.session.fullname|slice:":1"|upper }}
+                                </div>
+                            {% endif %}
+                            <span>{{ request.session.fullname }}</span>
+                            <i class='bx bx-chevron-down'></i>
+                        </button>
+
+                        <div class="nav-dropdown-menu">
+                            <a href="{% url 'profile' %}" class="nav-dropdown-item">
+                                <i class='bx bx-user'></i>
+                                Hồ sơ cá nhân
+                            </a>
+                            <div class="nav-dropdown-divider"></div>
+                            <a href="{% url 'logout' %}" class="nav-dropdown-item danger">
+                                <i class='bx bx-log-out'></i>
+                                Đăng xuất
+                            </a>
+                        </div>
+                    </div>
+
+                {% else %}
+
+                    <a href="{% url 'cart' %}" class="nav-link" style="position: relative;">
+                        <i class='bx bx-cart'></i>
+                        <span>Giỏ hàng</span>
+                        {% if cart_count > 0 %}
+                            <span class="cart-badge">{{ cart_count }}</span>
+                        {% endif %}
+                    </a>
+
+                    <div class="navbar-auth flex gap-sm">
+                        <a href="{% url 'login' %}" class="btn btn-outline btn-sm">
+                            <i class='bx bx-log-in'></i>
+                            Đăng nhập
+                        </a>
+                        <a href="{% url 'register' %}" class="btn btn-primary btn-sm">
+                            <i class='bx bx-user-plus'></i>
+                            Đăng ký
+                        </a>
+                    </div>
+
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2026 ToyCity. </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class='bx bx-check-circle'></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const icon = toast.querySelector('i');
+        
+        // Update icon based on message type
+        if (type === 'error' || type === 'danger') {
+            icon.className = 'bx bx-error-circle';
+        } else if (type === 'warning') {
+            icon.className = 'bx bx-info-circle';
+        } else {
+            icon.className = 'bx bx-check-circle';
+        }
+        
+        toast.className = 'toast ' + type;
+        toastMessage.textContent = message;
+        
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+    
+    // Automatically trigger toasts for Django messages
+    {% if messages %}
+        {% for message in messages %}
+            // Standardize 'error' level tag for toast CSS
+            {% if message.tags == 'error' %}
+                showToast("{{ message|escapejs }}", "error");
+            {% elif message.tags == 'warning' %}
+                showToast("{{ message|escapejs }}", "warning");
+            {% else %}
+                showToast("{{ message|escapejs }}", "success");
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

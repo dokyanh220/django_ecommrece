@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Thanh toán{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="bx bx-credit-card"></i> Thanh toán
+        </h1>
+    </div>
+
+    <div class="cart-layout">
+        <!-- Billing Info (Fake) -->
+        <div class="cart-items" style="background: white; padding: var(--space-xl); border: var(--border-width) solid var(--color-border); box-shadow: var(--shadow-solid-sm);">
+            <h3 class="font-semibold mb-lg">Thông tin giao hàng</h3>
+            <form id="checkout-form" method="post" action="{% url 'checkout_process' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Họ và tên</label>
+                    <input type="text" class="form-control" value="{{ request.session.fullname }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Số điện thoại</label>
+                    <input type="text" class="form-control" placeholder="Ví dụ: 0912345678" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Địa chỉ giao hàng</label>
+                    <textarea class="form-control" rows="3" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ghi chú (Tùy chọn)</label>
+                    <textarea class="form-control" rows="2" placeholder="Ghi chú thêm về đơn hàng"></textarea>
+                </div>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="cart-summary">
+            <h3 class="font-semibold mb-lg">Đơn hàng của bạn</h3>
+            
+            <div style="margin-bottom: var(--space-lg); border-bottom: var(--border-width) solid var(--color-border); padding-bottom: var(--space-md);">
+                {% for item in cart_items %}
+                <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: center;">
+                    <div style="width: 48px; height: 48px; overflow: hidden; flex-shrink: 0; background: var(--color-bg); border: var(--border-width) solid var(--color-border);">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--color-text-lighter);"><i class="bx bx-image"></i></div>
+                        {% endif %}
+                    </div>
+                    <div style="flex: 1; font-size: 14px;">
+                        <div style="font-weight: 500; margin-bottom: 4px;">{{ item.product.name }}</div>
+                        <div class="text-light">SL: {{ item.quantity }}</div>
+                    </div>
+                    <div style="font-weight: 500;">
+                        {% widthratio item.product.price 1 item.quantity as item_total %}
+                        {{ item_total|floatformat:0|intcomma }}đ
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="cart-summary-row">
+                <span class="text-light">Tạm tính</span>
+                <span>{{ total_price|floatformat:0|intcomma }}đ</span>
+            </div>
+
+            <div class="cart-summary-row">
+                <span class="text-light">Phí vận chuyển</span>
+                <span class="text-success">Miễn phí</span>
+            </div>
+
+            <div class="cart-summary-row cart-total-price">
+                <span class="font-bold">Tổng cộng</span>
+                <span class="font-bold text-primary">{{ total_price|floatformat:0|intcomma }}đ</span>
+            </div>
+
+            <button type="submit" form="checkout-form" class="btn btn-primary btn-lg btn-block mt-lg">
+                <i class="bx bx-check-circle"></i> Đặt hàng
+            </button>
+
+            <a href="{% url 'cart' %}" class="btn btn-outline btn-block mt-md">
+                <i class="bx bx-arrow-back"></i> Quay lại giỏ hàng
+            </a>
+        </div>
+    </div>
+{% endblock %}

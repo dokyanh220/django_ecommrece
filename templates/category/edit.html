@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sửa danh mục{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">Sửa danh mục</h1>
+        <a href="{% url 'category_list' %}" class="btn btn-outline">
+            <i class="bx bx-arrow-back"></i> Quay lại
+        </a>
+    </div>
+
+    <div class="form-card">
+        {% if error %}
+        <div class="alert alert-danger">
+            <i class="bx bx-error-circle"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label" for="name">Tên danh mục</label>
+                <input type="text" id="name" name="name" class="form-control" value="{{ category.name }}" placeholder="Nhập tên danh mục" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="description">Mô tả</label>
+                <textarea id="description" name="description" class="form-control" rows="4" placeholder="Nhập mô tả danh mục">{{ category.description|default:'' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="image">Hình ảnh</label>
+                {% if category.image %}
+                <div class="image-preview show mb-sm">
+                    <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                </div>
+                <p class="text-sm text-light mb-sm">Chọn ảnh mới để thay thế ảnh hiện tại.</p>
+                {% endif %}
+                <input type="file" id="image" name="image" class="form-control-file" accept="image/*">
+                <div id="imagePreview" class="image-preview mt-md"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bx bx-save"></i> Cập nhật danh mục
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('image').addEventListener('change', function(e) {
+        const preview = document.getElementById('imagePreview');
+        preview.innerHTML = '';
+        preview.classList.remove('show');
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const img = document.createElement('img');
+                img.src = ev.target.result;
+                preview.appendChild(img);
+                preview.classList.add('show');
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+</script>
+{% endblock %}
