@@ -137,5 +137,5 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'kyanhdubo2107@gmail.com'
 # Sử dụng App Password của Google
-EMAIL_HOST_PASSWORD = 'mftngajupwimwywq'
+EMAIL_HOST_PASSWORD = #'mftngajupwimwywq'
 DEFAULT_FROM_EMAIL = 'Web Ban Hang <kyanhdubo2107@gmail.com>'
